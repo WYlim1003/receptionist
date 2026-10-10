@@ -141,14 +141,14 @@ Generate exactly 3 reply options for the merchant to send back in WhatsApp.
 Each reply should be professional, friendly, and appropriately brief for WhatsApp.
 Match the reply language to the customer's language/dialect where appropriate.
 
-CRITICAL INSTRUCTION: If the customer's intent is to book an appointment, AND they provide an exact date and time (or refer to "today", "tomorrow" etc), you should ALSO return an "autoBooked" object to schedule it. If you do this, one of the replies MUST be auto-confirmation like "Booked [date] + [time]". Assume today is ${new Date().toISOString().split('T')[0]}.
+CRITICAL INSTRUCTION: If the customer's intent is to book an appointment, AND they provide an exact date and time (or refer to "today", "tomorrow" etc), you should ALSO return an "autoBooked" object to schedule it. If you do this, the first reply option MUST be an auto-confirmation in exactly this format: "booked [date] + [time]". Assume today is ${new Date().toISOString().split('T')[0]} (Timezone: GMT+8).
 
 Respond in JSON with this exact structure:
 {
   "replies": [
-    { "label": "short emoji + label", "text": "full reply message", "tone": "friendly | professional | casual" }
+    { "label": "✅ Auto-Confirm", "text": "booked 11 Oct + 3:00 PM (or whatever date/time they requested)", "tone": "professional" }
   ],
-  "autoBooked": null // OR if booking detected: { "start_time": "ISO string", "end_time": "ISO string (+30 mins)", "service_name": "Hair colouring etc" }
+  "autoBooked": null // OR if booking detected: { "start_time": "ISO string", "end_time": "ISO string (+30 mins)", "service_name": "Hair colouring etc", "customer_name": "Extract from transcription if possible, else 'Customer'" }
 }
 
 Respond ONLY with a valid JSON object. No extra text.`;
