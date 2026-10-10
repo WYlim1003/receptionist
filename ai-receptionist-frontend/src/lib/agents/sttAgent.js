@@ -16,19 +16,14 @@ export async function runSTTAgent({ filepath, messageIndex = 0, onLog }) {
   onLog(`🎙️ STTAgent: Sending audio to Whisper ASR...`);
   onLog(`   Path: ${filepath}`);
 
-  // First check server health
+  const DIALECT_SERVER_URL = 'http://127.0.0.1:8001';
+
   try {
+    // First check server health
     const health = await fetch(`${DIALECT_SERVER_URL}/health`, { signal: AbortSignal.timeout(3000) });
     if (!health.ok) throw new Error('unhealthy');
     onLog(`   Whisper server is up ✓`);
-  } catch {
-    throw new Error(
-      `STTAgent: Python ASR server is not running on port 8001. ` +
-      `Please start it with: python scripts/dialect_server.py`
-    );
-  }
 
-  try {
     // Call /transcribe with a strict 3-second timeout for demo purposes
     onLog(`   (Enforcing 3s timeout for demo speed...)`);
     const response = await fetch(`${DIALECT_SERVER_URL}/transcribe`, {
