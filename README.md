@@ -43,7 +43,6 @@ npm install
 
 # Create .env file
 echo "GEMINI_API_KEY=your_gemini_api_key" > .env
-echo "WHATSAPP_GROUP_NAME=无薪打工人" >> .env
 
 # Setup Python environment for Whisper
 python -m venv venv
