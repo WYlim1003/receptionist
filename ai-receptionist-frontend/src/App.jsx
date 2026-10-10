@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Sidebar from './components/Sidebar.jsx';
 import Overview from './pages/Overview.jsx';
 import Settings from './pages/Settings.jsx';
 import { api, DEMO_BUSINESS_ID } from './lib/api.js';
@@ -18,9 +17,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-surface">
-      <Sidebar business={business} />
-
-      <main className="flex-1 ml-60 min-h-screen flex flex-col">
+      <main className="flex-1 min-h-screen flex flex-col p-4">
         <Routes>
           <Route path="/"         element={<Overview  business={business} />} />
           <Route path="/settings" element={<Settings  business={business} setBusiness={setBusiness} />} />

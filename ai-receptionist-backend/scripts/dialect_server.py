@@ -39,10 +39,10 @@ print("=" * 50)
 asr_pipe = pipeline(
     "automatic-speech-recognition",
     model="openai/whisper-small",
-    device_map="auto",
+    device="cpu",   # Force CPU — avoids disk offload crash on low-RAM machines
 )
 
-print("✅ Whisper loaded and ready.")
+print("[OK] Whisper loaded and ready.")
 print("=" * 50)
 
 
