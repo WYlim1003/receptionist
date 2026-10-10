@@ -144,29 +144,41 @@ export async function runPipeline({ onLog, onNodeUpdate, onResult }) {
     }
 
     // ── QUICK CHECK: Standard Language Bypass ─────────────
-    // If transcription uses standard Latin alphabet, it's likely English/Malay
-    // which the merchant can read directly. Skip the expensive LLM translation.
     const requiresTranslation = /[^\x00-\x7F]/.test(transcription); // Has non-ASCII (e.g. Chinese characters)
 
-    // ── AGENT 3: LLMAgent ─────────────────────────────────
     let intent, explanation, language, llmModel;
 
     if (!requiresTranslation) {
-      log('\n── Node 3: LLMAgent (SKIPPED) ───────────────────');
-      log('   Detected standard language (English/Malay). Skipping LLM translation to save time.');
-      
+      // ── SILENT BYPASS FOR ENGLISH/MALAY ──
+      node('llm', 'idle'); // Visually skip
+      node('explain', 'idle'); // Visually skip
+
       intent = 'Direct Inquiry';
-      explanation = 'Standard language detected. Please refer directly to the transcription above.';
+      explanation = 'Standard language detected. Please refer directly to the transcription.';
       language = 'English / Malay';
       llmModel = 'skipped (fast-path)';
-      
-      node('llm', 'done');
+
+      // Silently generate display card without logging
+      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' }) : 'Unknown time';
+      result.summary = explanation;
+      result.displayCard = {
+        sender: msg.sender,
+        timestamp: timeStr,
+        language,
+        transcription,
+        intent,
+        explanation,
+        sections: [
+          { label: '🗣️ What they said (transcribed)', content: transcription, type: 'transcription' },
+          { label: '🌐 Language / Dialect', content: language, type: 'badge' }
+        ],
+      };
     } else {
+      // ── AGENT 3: LLMAgent ─────────────────────────────────
       node('llm', 'running');
       log('\n── Node 3: LLMAgent ────────────────────────────');
 
       try {
-        // If STTAgent already got the full analysis (fallback path), skip LLMAgent call
         if (_rawAnalysis) {
           log('   LLMAgent: Using pre-analyzed result from STT fallback...');
           const explainMatch = _rawAnalysis.match(/\*\*Explanation for Merchant:\*\*\s*([\s\S]+)/);
@@ -182,7 +194,6 @@ export async function runPipeline({ onLog, onNodeUpdate, onResult }) {
           language = llmResult.language;
           llmModel = llmResult.model;
         }
-
         node('llm', 'done');
       } catch (err) {
         log(`❌ LLMAgent failed: ${err.message}`);
@@ -192,38 +203,38 @@ export async function runPipeline({ onLog, onNodeUpdate, onResult }) {
         onResult?.(result);
         continue;
       }
-    }
 
-    result.intent = intent;
-    result.explanation = explanation;
-    result.language = language;
-    result.llmModel = llmModel;
+      result.intent = intent;
+      result.explanation = explanation;
+      result.language = language;
+      result.llmModel = llmModel;
 
-    // ── AGENT 4: ExplainAgent ─────────────────────────────
-    node('explain', 'running');
-    log('\n── Node 4: ExplainAgent ────────────────────────');
+      // ── AGENT 4: ExplainAgent ─────────────────────────────
+      node('explain', 'running');
+      log('\n── Node 4: ExplainAgent ────────────────────────');
 
-    try {
-      const explainResult = runExplainAgent({
-        transcription,
-        intent,
-        explanation,
-        language,
-        sender: msg.sender,
-        timestamp: msg.timestamp,
-        onLog: log,
-      });
+      try {
+        const explainResult = runExplainAgent({
+          transcription,
+          intent,
+          explanation,
+          language,
+          sender: msg.sender,
+          timestamp: msg.timestamp,
+          onLog: log,
+        });
 
-      result.summary = explainResult.summary;
-      result.displayCard = explainResult.displayCard;
-      node('explain', 'done');
-    } catch (err) {
-      log(`❌ ExplainAgent failed: ${err.message}`);
-      node('explain', 'error');
-      result.error = err.message;
-      results.push(result);
-      onResult?.(result);
-      continue;
+        result.summary = explainResult.summary;
+        result.displayCard = explainResult.displayCard;
+        node('explain', 'done');
+      } catch (err) {
+        log(`❌ ExplainAgent failed: ${err.message}`);
+        node('explain', 'error');
+        result.error = err.message;
+        results.push(result);
+        onResult?.(result);
+        continue;
+      }
     }
 
     // ── AGENT 5: ReplyAgent ───────────────────────────────
