@@ -29,11 +29,13 @@ export async function runSTTAgent({ filepath, messageIndex = 0, onLog }) {
   }
 
   try {
-    // Call /transcribe
+    // Call /transcribe with a strict 3-second timeout for demo purposes
+    onLog(`   (Enforcing 3s timeout for demo speed...)`);
     const response = await fetch(`${DIALECT_SERVER_URL}/transcribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filepath }),
+      signal: AbortSignal.timeout(3000),
     });
 
     if (!response.ok) {
