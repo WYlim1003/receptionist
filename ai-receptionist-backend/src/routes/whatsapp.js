@@ -5,6 +5,9 @@ import { GoogleGenAI } from '@google/genai';
 
 export const whatsappRouter = express.Router();
 
+// Shared Gemini client (uses GEMINI_API_KEY from .env)
+const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 whatsappRouter.get('/messages', async (req, res, next) => {
   try {
     const groupName = process.env.WHATSAPP_GROUP_NAME || '无薪打工人';
@@ -80,6 +83,82 @@ whatsappRouter.post('/analyze', async (req, res, next) => {
 
   } catch (error) {
     console.error("Analyze error:", error);
+    next(error);
+  }
+});
+
+// ── AGENT 3 endpoint: LLMAgent — understand intent via Gemini ──
+whatsappRouter.post('/understand', async (req, res, next) => {
+  try {
+    const { transcription } = req.body;
+    if (!transcription) return res.status(400).json({ error: 'Missing transcription' });
+
+    const prompt = `You are an AI assistant helping a small business merchant in Malaysia.
+
+A customer sent this voice message that has been transcribed:
+"${transcription}"
+
+Please respond in JSON with exactly these fields:
+- "intent": A short label for what the customer wants (e.g. "Book appointment", "Ask for price", "Inquire about hours")
+- "explanation": A clear 2-3 sentence explanation in English of what the customer means and what they want, written for the merchant
+- "language": The language or dialect detected (e.g. "Malay", "Cantonese", "Hokkien", "Mandarin", "English")
+
+Respond ONLY with valid JSON. No extra text.`;
+
+    const response = await genai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+    });
+
+    const text = response.text.replace(/```json\n?|```/g, '').trim();
+    const parsed = JSON.parse(text);
+
+    res.json({
+      intent: parsed.intent || 'Customer inquiry',
+      explanation: parsed.explanation || text,
+      language: parsed.language || 'auto-detected',
+    });
+  } catch (error) {
+    console.error('Understand error:', error);
+    next(error);
+  }
+});
+
+// ── AGENT 5 endpoint: ReplyAgent — suggest 3 replies via Gemini ──
+whatsappRouter.post('/suggest-replies', async (req, res, next) => {
+  try {
+    const { transcription, intent, explanation, language } = req.body;
+    if (!intent) return res.status(400).json({ error: 'Missing intent' });
+
+    const prompt = `You are an AI assistant helping a small business merchant in Malaysia reply to a customer.
+
+Customer voice message transcription: "${transcription}"
+Detected language/dialect: ${language}
+Customer intent: ${intent}
+Merchant explanation: ${explanation}
+
+Generate exactly 3 reply options for the merchant to send back in WhatsApp.
+Each reply should be professional, friendly, and appropriately brief for WhatsApp.
+Match the reply language to the customer's language/dialect where appropriate.
+
+Respond in JSON as an array of 3 objects, each with:
+- "label": A short emoji + name for this reply style (e.g. "📅 Confirm Booking")
+- "text": The full reply message text
+- "tone": One of "friendly", "professional", or "casual"
+
+Respond ONLY with a valid JSON array. No extra text.`;
+
+    const response = await genai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+    });
+
+    const text = response.text.replace(/```json\n?|```/g, '').trim();
+    const replies = JSON.parse(text);
+
+    res.json({ replies });
+  } catch (error) {
+    console.error('Suggest-replies error:', error);
     next(error);
   }
 });
