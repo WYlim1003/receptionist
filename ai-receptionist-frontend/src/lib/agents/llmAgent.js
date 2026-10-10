@@ -17,7 +17,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const BACKEND_URL = 'http://127.0.0.1:3001';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 const DIALECT_SERVER_URL = 'http://127.0.0.1:8001';
 
 export async function runLLMAgent({ transcription, onLog }) {

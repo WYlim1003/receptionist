@@ -5,7 +5,7 @@ export default function LiveDemo() {
   const [activeCall, setActiveCall] = useState(null);
 
   useEffect(() => {
-    const sseUrl = 'http://localhost:3001/api/calls/live';
+    const sseUrl = `${import.meta.env.VITE_API_URL || ''}/api/calls/live`;
     const source = new EventSource(sseUrl);
 
     source.onmessage = (event) => {

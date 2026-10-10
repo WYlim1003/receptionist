@@ -1,5 +1,5 @@
 // API client for the backend
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // Demo business ID (matches the seed data)
 export const DEMO_BUSINESS_ID = 'a0000000-0000-0000-0000-000000000001';
