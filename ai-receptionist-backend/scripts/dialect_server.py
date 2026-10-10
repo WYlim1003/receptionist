@@ -56,7 +56,7 @@ async def health():
 
 
 @app.post("/transcribe")
-async def transcribe(req: AudioRequest):
+def transcribe(req: AudioRequest):
     """Dedicated transcription-only endpoint."""
     if not os.path.exists(req.filepath):
         raise HTTPException(status_code=400, detail=f"Audio file not found: {req.filepath}")
@@ -73,7 +73,7 @@ async def transcribe(req: AudioRequest):
 
 
 @app.post("/process_audio")
-async def process_audio(req: AudioRequest):
+def process_audio(req: AudioRequest):
     """
     Legacy endpoint — kept for backward compatibility.
     Now returns only transcription wrapped in the old analysis format.
