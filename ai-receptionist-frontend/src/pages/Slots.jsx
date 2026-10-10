@@ -12,26 +12,7 @@ const STATUS_STYLES = {
   blocked: { bar: 'bg-red-500/10 border-red-500/20 text-red-500', label: 'Blocked' },
 };
 
-const MOCK_SLOTS = (() => {
-  const slots = [];
-  const base = new Date();
-  base.setHours(9, 0, 0, 0);
-  const statuses = ['open', 'open', 'booked', 'open', 'locked', 'open', 'booked', 'open', 'open', 'blocked'];
-  for (let i = 0; i < 10; i++) {
-    const start = new Date(base.getTime() + i * 30 * 60000);
-    const end   = new Date(start.getTime() + 30 * 60000);
-    slots.push({
-      id: `slot-${i}`,
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      status: statuses[i],
-      service_name: 'Haircut',
-      customer_name: statuses[i] === 'booked' ? 'Ahmad Razif' : null,
-      booking_id: statuses[i] === 'booked' ? `booking-${i}` : null,
-    });
-  }
-  return slots;
-})();
+const MOCK_SLOTS = [];
 
 export default function Slots({ business, isEmbedded = false }) {
   const [slots, setSlots]     = useState(MOCK_SLOTS);
@@ -51,6 +32,27 @@ export default function Slots({ business, isEmbedded = false }) {
   }, [selectedDay]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Listen for auto-booking events from the ReplyAgent
+  useEffect(() => {
+    const handleAutoBook = (e) => {
+      const { start_time, end_time, customer_name, service_name } = e.detail;
+      setSlots((prev) => [
+        ...prev,
+        {
+          id: `auto-${Date.now()}`,
+          start_time,
+          end_time,
+          status: 'booked',
+          customer_name: customer_name || 'Customer',
+          service_name: service_name || 'Auto Booking',
+          booking_id: `booking-${Date.now()}`
+        }
+      ]);
+    };
+    window.addEventListener('auto-book', handleAutoBook);
+    return () => window.removeEventListener('auto-book', handleAutoBook);
+  }, []);
 
   const handleBlock = async (slot) => {
     if (slot.status !== 'open') return;

@@ -141,12 +141,17 @@ Generate exactly 3 reply options for the merchant to send back in WhatsApp.
 Each reply should be professional, friendly, and appropriately brief for WhatsApp.
 Match the reply language to the customer's language/dialect where appropriate.
 
-Respond in JSON as an array of 3 objects, each with:
-- "label": A short emoji + name for this reply style (e.g. "📅 Confirm Booking")
-- "text": The full reply message text
-- "tone": One of "friendly", "professional", or "casual"
+CRITICAL INSTRUCTION: If the customer's intent is to book an appointment, AND they provide an exact date and time (or refer to "today", "tomorrow" etc), you should ALSO return an "autoBooked" object to schedule it. If you do this, one of the replies MUST be auto-confirmation like "Booked [date] + [time]". Assume today is ${new Date().toISOString().split('T')[0]}.
 
-Respond ONLY with a valid JSON array. No extra text.`;
+Respond in JSON with this exact structure:
+{
+  "replies": [
+    { "label": "short emoji + label", "text": "full reply message", "tone": "friendly | professional | casual" }
+  ],
+  "autoBooked": null // OR if booking detected: { "start_time": "ISO string", "end_time": "ISO string (+30 mins)", "service_name": "Hair colouring etc" }
+}
+
+Respond ONLY with a valid JSON object. No extra text.`;
 
     const response = await genai.models.generateContent({
       model: 'gemini-2.0-flash',
@@ -154,9 +159,14 @@ Respond ONLY with a valid JSON array. No extra text.`;
     });
 
     const text = response.text.replace(/```json\n?|```/g, '').trim();
-    const replies = JSON.parse(text);
+    const parsed = JSON.parse(text);
 
-    res.json({ replies });
+    // Backward compatibility if Gemini accidentally returns an array
+    if (Array.isArray(parsed)) {
+      res.json({ replies: parsed });
+    } else {
+      res.json(parsed);
+    }
   } catch (error) {
     console.error('Suggest-replies error:', error);
     next(error);

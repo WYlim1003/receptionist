@@ -33,6 +33,11 @@ export async function runReplyAgent({ transcription, intent, explanation, langua
     const data = await response.json();
     const replies = data.replies || [];
 
+    if (data.autoBooked) {
+      onLog(`⚡ ReplyAgent: Auto-booking detected! Scheduling slot for ${new Date(data.autoBooked.start_time).toLocaleTimeString()}`);
+      window.dispatchEvent(new CustomEvent('auto-book', { detail: data.autoBooked }));
+    }
+
     onLog(`✅ ReplyAgent (Gemini): Generated ${replies.length} reply option(s).`);
 
     return { replies, model: 'gemini' };
