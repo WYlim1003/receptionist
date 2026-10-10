@@ -143,43 +143,61 @@ export async function runPipeline({ onLog, onNodeUpdate, onResult }) {
       continue; // Skip remaining agents for this message
     }
 
-    // ── AGENT 3: LLMAgent ─────────────────────────────────
-    node('llm', 'running');
-    log('\n── Node 3: LLMAgent ────────────────────────────');
+    // ── QUICK CHECK: Standard Language Bypass ─────────────
+    // If transcription uses standard Latin alphabet, it's likely English/Malay
+    // which the merchant can read directly. Skip the expensive LLM translation.
+    const requiresTranslation = /[^\x00-\x7F]/.test(transcription); // Has non-ASCII (e.g. Chinese characters)
 
+    // ── AGENT 3: LLMAgent ─────────────────────────────────
     let intent, explanation, language, llmModel;
 
-    try {
-      // If STTAgent already got the full analysis (fallback path), skip LLMAgent call
-      if (_rawAnalysis) {
-        log('   LLMAgent: Using pre-analyzed result from STT fallback...');
-        const explainMatch = _rawAnalysis.match(/\*\*Explanation for Merchant:\*\*\s*([\s\S]+)/);
-        intent = 'Customer request';
-        explanation = explainMatch ? explainMatch[1].trim() : _rawAnalysis;
-        language = 'auto-detected';
-        llmModel = 'qwen-local (via fallback)';
-        log(`✅ LLMAgent: Parsed from fallback → intent="${intent}"`);
-      } else {
-        const llmResult = await runLLMAgent({ transcription, onLog: log });
-        intent = llmResult.intent;
-        explanation = llmResult.explanation;
-        language = llmResult.language;
-        llmModel = llmResult.model;
-      }
-
-      result.intent = intent;
-      result.explanation = explanation;
-      result.language = language;
-      result.llmModel = llmModel;
+    if (!requiresTranslation) {
+      log('\n── Node 3: LLMAgent (SKIPPED) ───────────────────');
+      log('   Detected standard language (English/Malay). Skipping LLM translation to save time.');
+      
+      intent = 'Direct Inquiry';
+      explanation = 'Standard language detected. Please refer directly to the transcription above.';
+      language = 'English / Malay';
+      llmModel = 'skipped (fast-path)';
+      
       node('llm', 'done');
-    } catch (err) {
-      log(`❌ LLMAgent failed: ${err.message}`);
-      node('llm', 'error');
-      result.error = err.message;
-      results.push(result);
-      onResult?.(result);
-      continue;
+    } else {
+      node('llm', 'running');
+      log('\n── Node 3: LLMAgent ────────────────────────────');
+
+      try {
+        // If STTAgent already got the full analysis (fallback path), skip LLMAgent call
+        if (_rawAnalysis) {
+          log('   LLMAgent: Using pre-analyzed result from STT fallback...');
+          const explainMatch = _rawAnalysis.match(/\*\*Explanation for Merchant:\*\*\s*([\s\S]+)/);
+          intent = 'Customer request';
+          explanation = explainMatch ? explainMatch[1].trim() : _rawAnalysis;
+          language = 'auto-detected';
+          llmModel = 'qwen-local (via fallback)';
+          log(`✅ LLMAgent: Parsed from fallback → intent="${intent}"`);
+        } else {
+          const llmResult = await runLLMAgent({ transcription, onLog: log });
+          intent = llmResult.intent;
+          explanation = llmResult.explanation;
+          language = llmResult.language;
+          llmModel = llmResult.model;
+        }
+
+        node('llm', 'done');
+      } catch (err) {
+        log(`❌ LLMAgent failed: ${err.message}`);
+        node('llm', 'error');
+        result.error = err.message;
+        results.push(result);
+        onResult?.(result);
+        continue;
+      }
     }
+
+    result.intent = intent;
+    result.explanation = explanation;
+    result.language = language;
+    result.llmModel = llmModel;
 
     // ── AGENT 4: ExplainAgent ─────────────────────────────
     node('explain', 'running');
