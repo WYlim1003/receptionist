@@ -16,6 +16,7 @@ const MOCK_SLOTS = [];
 
 export default function Slots({ business, isEmbedded = false }) {
   const [slots, setSlots]     = useState(MOCK_SLOTS);
+  const [autoBookedSlots, setAutoBookedSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedDay, setSelectedDay] = useState(new Date());
@@ -25,11 +26,20 @@ export default function Slots({ business, isEmbedded = false }) {
     setLoading(true);
     try {
       const dateStr = format(selectedDay, 'yyyy-MM-dd');
-      const data = await api.slots.list(DEMO_BUSINESS_ID, dateStr);
-      setSlots(data.length > 0 ? data : MOCK_SLOTS);
-    } catch (_) { setSlots(MOCK_SLOTS); }
+      let data = [];
+      try {
+        data = await api.slots.list(DEMO_BUSINESS_ID, dateStr);
+      } catch (e) {}
+      
+      const apiSlots = data.length > 0 ? data : [];
+      const manualSlots = autoBookedSlots.filter(s => format(new Date(s.start_time), 'yyyy-MM-dd') === dateStr);
+      
+      setSlots([...apiSlots, ...manualSlots]);
+    } catch (_) { 
+      setSlots([]);
+    }
     setLoading(false);
-  }, [selectedDay]);
+  }, [selectedDay, autoBookedSlots]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -37,18 +47,22 @@ export default function Slots({ business, isEmbedded = false }) {
   useEffect(() => {
     const handleAutoBook = (e) => {
       const { start_time, end_time, customer_name, service_name } = e.detail;
-      setSlots((prev) => [
-        ...prev,
-        {
-          id: `auto-${Date.now()}`,
-          start_time,
-          end_time,
-          status: 'booked',
-          customer_name: customer_name || 'Customer',
-          service_name: service_name || 'Auto Booking',
-          booking_id: `booking-${Date.now()}`
-        }
-      ]);
+      const newSlot = {
+        id: `auto-${Date.now()}`,
+        start_time,
+        end_time,
+        status: 'booked',
+        customer_name: customer_name || 'Customer',
+        service_name: service_name || 'Auto Booking',
+        booking_id: `booking-${Date.now()}`
+      };
+      
+      setAutoBookedSlots(prev => [...prev, newSlot]);
+      
+      // Auto-navigate the calendar to the booked date to show the slot immediately
+      const bookedDate = new Date(start_time);
+      setSelectedDay(bookedDate);
+      setWeekStart(startOfWeek(bookedDate, { weekStartsOn: 1 }));
     };
     window.addEventListener('auto-book', handleAutoBook);
     return () => window.removeEventListener('auto-book', handleAutoBook);
