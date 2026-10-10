@@ -1,16 +1,12 @@
-# React + Vite
+# VoiceDesk: AI WhatsApp Receptionist
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Core Concept
+VoiceDesk acts as an intelligent AI assistant for merchants. 
+The system automatically fetches dialect voice messages from customers on WhatsApp, runs Speech-to-Text (STT) transcription, translates the intent, and uses a Large Language Model (LLM) to explain to the business owner exactly what the customer meant. It then suggests a professional reply to send back, streamlining customer service for businesses that deal with multiple dialects.
 
-Currently, two official plugins are available:
+## Future Improvements
+The following features are planned for future updates:
+- **Live Demo**: A public-facing live demo interface for testing real-time voice calls.
+- **Call Logs**: Detailed analytics and historical logs of all processed customer interactions.
+- **Automated Bookings**: Direct calendar integration for automatic appointment scheduling based on voice intent.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.

@@ -5,11 +5,7 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/',          icon: LayoutDashboard, label: 'Overview' },
-  { to: '/bookings',  icon: Calendar,        label: 'Bookings' },
-  { to: '/slots',     icon: Clock,           label: 'Slots' },
-  { to: '/calls',     icon: PhoneCall,       label: 'Call Logs' },
-  { to: '/live',      icon: Activity,        label: 'Live Demo' },
+  { to: '/',          icon: LayoutDashboard, label: 'Overview' }
 ];
 
 export default function Sidebar({ business }) {

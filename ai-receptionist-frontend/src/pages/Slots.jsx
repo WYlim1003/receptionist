@@ -33,7 +33,7 @@ const MOCK_SLOTS = (() => {
   return slots;
 })();
 
-export default function Slots({ business }) {
+export default function Slots({ business, isEmbedded = false }) {
   const [slots, setSlots]     = useState(MOCK_SLOTS);
   const [loading, setLoading] = useState(false);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -92,8 +92,8 @@ export default function Slots({ business }) {
   };
 
   return (
-    <div className="flex flex-col flex-1">
-      <TopBar title="Slot Manager" subtitle="View and manage available time slots" onRefresh={load} loading={loading} />
+    <div className={`flex flex-col flex-1 ${isEmbedded ? '' : ''}`}>
+      {!isEmbedded && <TopBar title="Slot Manager" subtitle="View and manage available time slots" onRefresh={load} loading={loading} />}
 
       <div className="p-6 flex-1 flex flex-col gap-4 animate-slide-up">
         {/* Week navigator */}
