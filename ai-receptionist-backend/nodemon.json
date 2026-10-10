@@ -1,0 +1,11 @@
+{
+  "ignore": [
+    "whatsapp-mcp-ts/data/*",
+    "whatsapp-mcp-ts/media/*",
+    "whatsapp-mcp-ts/auth_info/*",
+    "*.db",
+    "*.db-journal",
+    "*.db-wal",
+    "*.db-shm"
+  ]
+}

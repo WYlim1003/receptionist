@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "whatsapp": {
+      "command": "npx",
+      "args": ["tsx", "--no-warnings", "src/main.ts"],
+      "cwd": "c:\\Projects\\AI Workflow\\ai-receptionist-backend\\whatsapp-mcp-ts"
+    }
+  }
+}
