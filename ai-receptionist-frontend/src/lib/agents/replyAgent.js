@@ -54,11 +54,31 @@ function _fallbackTemplateReplies({ intent, language, onLog }) {
   let replies = [];
 
   if (intentLower.includes('book') || intentLower.includes('appointment') || intentLower.includes('slot')) {
+    // -------------------------------------------------------------
+    // DEMO FALLBACK: Force auto-booking for today at 3:00 PM
+    // -------------------------------------------------------------
+    const today = new Date();
+    today.setHours(15, 0, 0, 0); // 3:00 PM
+    const endTime = new Date(today.getTime() + 30 * 60000); // 3:30 PM
+
+    const autoBooked = {
+      start_time: today.toISOString(),
+      end_time: endTime.toISOString(),
+      service_name: 'Haircut',
+      customer_name: 'Customer'
+    };
+
+    onLog(`⚡ ReplyAgent (offline fallback): Auto-booking detected! Scheduling slot for 3:00 PM`);
+    window.dispatchEvent(new CustomEvent('auto-book', { detail: autoBooked }));
+
+    const formattedDate = `${today.getDate()} ${today.toLocaleString('en-US', { month: 'short' })}`;
+    const formattedTime = today.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
     replies = [
       {
-        label: '📅 Confirm Booking',
-        text: 'Hi! Thanks for reaching out. We would love to book you in! Could you please let us know your preferred date and time?',
-        tone: 'friendly',
+        label: '✅ Auto-Confirm',
+        text: `booked ${formattedDate} + ${formattedTime}`,
+        tone: 'professional',
       },
       {
         label: '📋 Ask for Details',
