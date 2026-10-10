@@ -126,23 +126,6 @@ export default function Slots({ business, isEmbedded = false }) {
           </button>
         </div>
 
-        {/* Summary + actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-3">
-            {Object.entries(summary).map(([status, count]) => (
-              <div key={status} className={`px-3 py-1.5 rounded-xl border text-sm font-medium ${STATUS_STYLES[status].bar}`}>
-                {count} {STATUS_STYLES[status].label}
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <button onClick={handleGenerate} disabled={generating} className="btn-primary">
-              <Zap size={14} />
-              {generating ? 'Generating...' : 'Generate Week'}
-            </button>
-          </div>
-        </div>
-
         {/* Slot grid */}
         <div className="card p-0 flex-1 overflow-auto">
           <div className="p-4 border-b border-surface-border">
