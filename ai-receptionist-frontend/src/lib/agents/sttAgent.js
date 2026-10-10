@@ -2,54 +2,51 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * AGENT 2: STTAgent (Speech-To-Text)
  * ─────────────────────────────────────────────────────────────────────────────
- * Responsibility:
- *   Take a single voice message filepath and send it to the Python FastAPI
- *   dialect server running Whisper (openai/whisper-small). Returns the raw
- *   transcription text.
- *
- *   The Python server exposes /process_audio which returns both transcription
- *   and a local LLM analysis. This agent extracts only the transcription part
- *   and passes the raw analysis along so the LLMAgent can reuse it to avoid
- *   a double model call.
+ * Calls the local Whisper ASR server directly on port 8001.
+ * The Python server is now Whisper-only (Qwen removed — Gemini handles LLM).
  *
  * Input:  { filepath: string }
- * Output: { transcription: string, _rawAnalysis?: string }
+ * Output: { transcription: string }
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const BACKEND_URL = 'http://127.0.0.1:3001';
+const DIALECT_SERVER_URL = 'http://127.0.0.1:8001';
 
 export async function runSTTAgent({ filepath, onLog }) {
-  onLog(`🎙️ STTAgent: Sending audio file to Whisper for transcription...`);
+  onLog(`🎙️ STTAgent: Sending audio to Whisper ASR...`);
   onLog(`   Path: ${filepath}`);
 
-  // Call backend /analyze which proxies to Python /process_audio
-  // The backend expects the filepath in [Audio] <path> format
-  const response = await fetch(`${BACKEND_URL}/api/whatsapp/analyze`, {
+  // First check server health
+  try {
+    const health = await fetch(`${DIALECT_SERVER_URL}/health`, { signal: AbortSignal.timeout(3000) });
+    if (!health.ok) throw new Error('unhealthy');
+    onLog(`   Whisper server is up ✓`);
+  } catch {
+    throw new Error(
+      `STTAgent: Python ASR server is not running on port 8001. ` +
+      `Please start it with: python scripts/dialect_server.py`
+    );
+  }
+
+  // Call /transcribe
+  const response = await fetch(`${DIALECT_SERVER_URL}/transcribe`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filepath: `[Audio] ${filepath}` }),
+    body: JSON.stringify({ filepath }),
   });
 
   if (!response.ok) {
-    const errText = await response.text().catch(() => response.statusText);
-    throw new Error(`STTAgent: Backend /analyze returned ${response.status} — ${errText}`);
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(`STTAgent: Whisper returned ${response.status} — ${err.detail}`);
   }
 
   const data = await response.json();
-  const analysis = data.analysis || '';
+  const transcription = (data.transcription || data.text || '').trim();
 
-  // Extract transcription from the combined analysis text
-  // Format: "**Transcription:**\n<text>\n\n**Explanation for Merchant:**\n<text>"
-  const transcriptionMatch = analysis.match(/\*\*Transcription:\*\*\s*([\s\S]+?)(?:\n\n|\*\*|$)/);
-  const transcription = transcriptionMatch
-    ? transcriptionMatch[1].trim()
-    : analysis.split('\n')[0].trim();
+  if (!transcription) {
+    throw new Error(`STTAgent: Whisper returned empty transcription for ${filepath}`);
+  }
 
-  onLog(`✅ STTAgent: Transcription complete → "${transcription}"`);
-
-  return {
-    transcription,
-    _rawAnalysis: analysis, // Pass through so LLMAgent can reuse Qwen output if Gemini is unavailable
-  };
+  onLog(`✅ STTAgent: Transcription → "${transcription}"`);
+  return { transcription };
 }
