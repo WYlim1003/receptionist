@@ -44,18 +44,57 @@ export async function runReplyAgent({ transcription, intent, explanation, langua
     return { replies, model: 'gemini' };
   } catch (err) {
     onLog(`⚠️  ReplyAgent: Gemini unavailable (${err.message}). Using fallback template replies...`);
-    return _fallbackTemplateReplies({ intent, language, onLog });
+    return _fallbackTemplateReplies({ transcription, intent, language, onLog });
   }
 }
 
-function _fallbackTemplateReplies({ intent, language, onLog }) {
+function _fallbackTemplateReplies({ transcription, intent, language, onLog }) {
   const intentLower = (intent || '').toLowerCase();
+  const txLower = (transcription || '').toLowerCase();
 
   let replies = [];
 
-  if (intentLower.includes('book') || intentLower.includes('appointment') || intentLower.includes('slot')) {
+  if (txLower.includes('colouring') || txLower.includes('what time slots are available') || txLower.includes('free slot')) {
     // -------------------------------------------------------------
-    // DEMO FALLBACK: Force auto-booking for today at 3:00 PM
+    // DEMO FALLBACK (English message): Suggest and auto-book a free slot (10:00 AM)
+    // -------------------------------------------------------------
+    const today = new Date();
+    today.setHours(10, 0, 0, 0); // 10:00 AM
+    const endTime = new Date(today.getTime() + 60 * 60000); // 11:00 AM (colouring takes longer)
+
+    const autoBooked = {
+      start_time: today.toISOString(),
+      end_time: endTime.toISOString(),
+      service_name: 'Hair Colouring',
+      customer_name: 'Customer'
+    };
+
+    onLog(`⚡ ReplyAgent (offline fallback): Auto-booking detected! Scheduling slot for 10:00 AM`);
+    window.dispatchEvent(new CustomEvent('auto-book', { detail: autoBooked }));
+
+    const formattedDate = `${today.getDate()} ${today.toLocaleString('en-US', { month: 'short' })}`;
+    const formattedTime = today.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    replies = [
+      {
+        label: '✅ Suggest Slot',
+        text: `Hi! We have a free slot at ${formattedTime}. I've provisionally booked ${formattedDate} + ${formattedTime} for your hair colouring. See you then!`,
+        tone: 'friendly',
+      },
+      {
+        label: '📋 Ask for Details',
+        text: 'Hello! I can fit you in at 10 AM or 1 PM today. Which one works better for you?',
+        tone: 'professional',
+      },
+      {
+        label: '✅ Direct Confirm',
+        text: 'Sure! 10 AM is available for colouring. See you then!',
+        tone: 'casual',
+      },
+    ];
+  } else if (intentLower.includes('book') || intentLower.includes('appointment') || intentLower.includes('slot') || txLower.includes('book')) {
+    // -------------------------------------------------------------
+    // DEMO FALLBACK (Cantonese message): Force auto-booking for today at 3:00 PM
     // -------------------------------------------------------------
     const today = new Date();
     today.setHours(15, 0, 0, 0); // 3:00 PM
