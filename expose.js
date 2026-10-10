@@ -5,7 +5,7 @@ console.log('🚀 Setting up public URL for VoiceDesk Demo...');
 console.log('   (This uses localtunnel to safely expose your local Vite dev server)');
 
 // Ensure localtunnel is installed globally or locally
-const lt = spawn('npx', ['localtunnel', '--port', '5173'], { stdio: ['ignore', 'pipe', 'inherit'] });
+const lt = spawn('npx', ['localtunnel', '--port', '5173'], { shell: true, stdio: ['ignore', 'pipe', 'inherit'] });
 
 lt.stdout.on('data', (data) => {
   const output = data.toString();
