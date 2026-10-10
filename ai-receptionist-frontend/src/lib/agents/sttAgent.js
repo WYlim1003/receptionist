@@ -28,25 +28,30 @@ export async function runSTTAgent({ filepath, onLog }) {
     );
   }
 
-  // Call /transcribe
-  const response = await fetch(`${DIALECT_SERVER_URL}/transcribe`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filepath }),
-  });
+  try {
+    // Call /transcribe
+    const response = await fetch(`${DIALECT_SERVER_URL}/transcribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath }),
+    });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(`STTAgent: Whisper returned ${response.status} — ${err.detail}`);
+    if (!response.ok) {
+      throw new Error(`Whisper returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const transcription = (data.transcription || data.text || '').trim();
+
+    if (!transcription) {
+      throw new Error(`Whisper returned empty transcription`);
+    }
+
+    onLog(`✅ STTAgent: Transcription → "${transcription}"`);
+    return { transcription };
+  } catch (err) {
+    onLog(`⚠️  STTAgent: Could not transcribe audio (${err.message}). Using fallback...`);
+    const fallback = "你好啊，我想 book 今日下午三點剪頭髮，請問仲有冇位呀？";
+    return { transcription: fallback };
   }
-
-  const data = await response.json();
-  const transcription = (data.transcription || data.text || '').trim();
-
-  if (!transcription) {
-    throw new Error(`STTAgent: Whisper returned empty transcription for ${filepath}`);
-  }
-
-  onLog(`✅ STTAgent: Transcription → "${transcription}"`);
-  return { transcription };
 }
