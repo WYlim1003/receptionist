@@ -22,10 +22,11 @@ export async function runReplyAgent({ transcription, intent, explanation, langua
   onLog(`💬 ReplyAgent: Generating suggested replies using Gemini...`);
 
   try {
+    const bookedSlots = window.CURRENT_BOOKED_SLOTS || [];
     const response = await fetch(`${BACKEND_URL}/api/whatsapp/suggest-replies`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcription, intent, explanation, language }),
+      body: JSON.stringify({ transcription, intent, explanation, language, bookedSlots }),
     });
 
     if (!response.ok) throw new Error(`Backend /suggest-replies returned ${response.status}`);

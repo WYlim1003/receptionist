@@ -43,6 +43,13 @@ export default function Slots({ business, isEmbedded = false }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Expose booked slots globally so the ReplyAgent knows what is taken
+  useEffect(() => {
+    const allSlots = [...slots]; // slots already includes autoBookedSlots from the load() merge
+    const booked = allSlots.filter(s => s.status === 'booked' || s.status === 'blocked' || s.status === 'locked');
+    window.CURRENT_BOOKED_SLOTS = booked.map(s => s.start_time);
+  }, [slots]);
+
   // Listen for auto-booking events from the ReplyAgent
   useEffect(() => {
     const handleAutoBook = (e) => {

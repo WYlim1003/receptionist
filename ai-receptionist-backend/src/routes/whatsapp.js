@@ -127,7 +127,7 @@ Respond ONLY with valid JSON. No extra text.`;
 // ── AGENT 5 endpoint: ReplyAgent — suggest 3 replies via Gemini ──
 whatsappRouter.post('/suggest-replies', async (req, res, next) => {
   try {
-    const { transcription, intent, explanation, language } = req.body;
+    const { transcription, intent, explanation, language, bookedSlots = [] } = req.body;
     if (!intent) return res.status(400).json({ error: 'Missing intent' });
 
     const prompt = `You are an AI assistant helping a small business merchant in Malaysia reply to a customer.
@@ -137,11 +137,17 @@ Detected language/dialect: ${language}
 Customer intent: ${intent}
 Merchant explanation: ${explanation}
 
+CRITICAL BUSINESS RULES:
+1. The business is open from 9:00 AM to 6:00 PM.
+2. The following times are ALREADY BOOKED and CANNOT be offered: ${JSON.stringify(bookedSlots)}.
+
 Generate exactly 3 reply options for the merchant to send back in WhatsApp.
 Each reply should be professional, friendly, and appropriately brief for WhatsApp.
 Match the reply language to the customer's language/dialect where appropriate.
 
-CRITICAL INSTRUCTION: If the customer's intent is to book an appointment, AND they provide an exact date and time (or refer to "today", "tomorrow" etc), you should ALSO return an "autoBooked" object to schedule it. If you do this, the first reply option MUST be an auto-confirmation in exactly this format: "booked [date] + [time]". Assume today is ${new Date().toISOString().split('T')[0]} (Timezone: GMT+8).
+CRITICAL INSTRUCTION: 
+- If the customer asks for ANY available slot, you MUST suggest a specific available 30-minute slot today (or tomorrow if today is full) between 9:00 AM and 5:30 PM that is NOT in the booked list above.
+- If the customer's intent is to book an appointment (either they requested a specific time, OR you are suggesting a specific time as per the rule above), you should ALSO return an "autoBooked" object to schedule it. If you do this, the first reply option MUST be an auto-confirmation in exactly this format: "booked [date] + [time]". Assume today is ${new Date().toISOString().split('T')[0]} (Timezone: GMT+8).
 
 Respond in JSON with this exact structure:
 {
