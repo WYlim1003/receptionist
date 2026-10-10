@@ -69,8 +69,8 @@ function _fallbackTemplateReplies({ transcription, intent, language, onLog }) {
       customer_name: 'Customer'
     };
 
-    onLog(`⚡ ReplyAgent (offline fallback): Auto-booking detected! Scheduling slot for 10:00 AM`);
-    window.dispatchEvent(new CustomEvent('auto-book', { detail: autoBooked }));
+    onLog(`⚡ ReplyAgent (offline fallback): Suggesting slot for 10:00 AM (Not booked yet)`);
+    // Do NOT dispatch auto-book event here because the customer hasn't confirmed yet
 
     const formattedDate = `${today.getDate()} ${today.toLocaleString('en-US', { month: 'short' })}`;
     const formattedTime = today.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
