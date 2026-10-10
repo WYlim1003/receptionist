@@ -129,7 +129,7 @@ export async function runPipeline({ onLog, onNodeUpdate, onResult }) {
     let _rawAnalysis; // may contain full analysis from fallback
 
     try {
-      const sttResult = await runSTTAgent({ filepath: msg.filepath, onLog: log });
+      const sttResult = await runSTTAgent({ filepath: msg.filepath, messageIndex: i, onLog: log });
       transcription = sttResult.transcription;
       _rawAnalysis = sttResult._rawAnalysis; // only populated on fallback
       result.transcription = transcription;

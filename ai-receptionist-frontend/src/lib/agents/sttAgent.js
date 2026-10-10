@@ -12,7 +12,7 @@
 
 const DIALECT_SERVER_URL = 'http://127.0.0.1:8001';
 
-export async function runSTTAgent({ filepath, onLog }) {
+export async function runSTTAgent({ filepath, messageIndex = 0, onLog }) {
   onLog(`🎙️ STTAgent: Sending audio to Whisper ASR...`);
   onLog(`   Path: ${filepath}`);
 
@@ -51,7 +51,9 @@ export async function runSTTAgent({ filepath, onLog }) {
     return { transcription };
   } catch (err) {
     onLog(`⚠️  STTAgent: Could not transcribe audio (${err.message}). Using fallback...`);
-    const fallback = "你好啊，我想 book 今日下午三點剪頭髮，請問仲有冇位呀？";
+    const fallback = messageIndex === 0
+      ? "你好啊，我想 book 今日下午三點剪頭髮，請問仲有冇位呀？"
+      : "Hi, what time slots are available today for hair colouring?";
     return { transcription: fallback };
   }
 }
