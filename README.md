@@ -84,3 +84,8 @@ npm run dev
 - Add persistent call logs and database history.
 - Add an interactive booking calendar UI (slots and appointments) that updates based on customer voice intent.
 - Expand support for direct auto-replying via WhatsApp MCP.
+
+## 📚 Project Resources
+- **Deep Researching (Initial Implementation Plan)**: Generated using [WorkBuddy AI](https://www.workbuddy.ai/)  
+  🔗 [Implementation Plan Document](https://www.workbuddy.ai/space/d/pPHjnBdRdrFNCxxiMJ5g7e?ext2=copy_link)
+- **Slide Presentation**: *Link will be provided later.*
